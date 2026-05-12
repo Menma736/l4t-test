@@ -60,6 +60,7 @@ bsdextrautils
 bsdutils
 btrfs-progs
 bubblewrap
+build-essential
 bup
 bup-doc
 busybox-initramfs
@@ -126,6 +127,7 @@ diffutils
 dirmngr
 distro-info
 distro-info-data
+dkms
 dmeventd
 dmidecode
 dmraid
@@ -138,6 +140,7 @@ dolphin
 dolphin-plugins
 dosfstools
 dpkg
+dpkg-dev
 dpkg-repack
 dracut-install
 drkonqi
@@ -151,6 +154,7 @@ emacsen-common
 enchant-2
 espeak-ng-data
 ethtool
+fakeroot
 fcitx5
 fcitx5-chinese-addons
 fcitx5-chinese-addons-bin
@@ -208,8 +212,16 @@ ftp
 fuse3
 fwupd
 fwupd-signed
+g++
+g++-13
+g++-13-aarch64-linux-gnu
+g++-aarch64-linux-gnu
+gcc
+gcc-13
+gcc-13-aarch64-linux-gnu
 gcc-13-base
 gcc-14-base
+gcc-aarch64-linux-gnu
 gdb
 genisoimage
 geoclue-2.0
@@ -415,6 +427,9 @@ libaccounts-qt5-1
 libaccountsservice0
 libacl1
 libaio1t64
+libalgorithm-diff-perl
+libalgorithm-diff-xs-perl
+libalgorithm-merge-perl
 libao-common
 libao4
 libaom3
@@ -428,6 +443,7 @@ libapt-pkg6.0t64
 libarchive13t64
 libargon2-1
 libaribb24-0t64
+libasan8
 libasound2-data
 libasound2t64
 libaspell15
@@ -438,6 +454,7 @@ libatasmart4
 libatk-bridge2.0-0t64
 libatk1.0-0t64
 libatm1t64
+libatomic1
 libatopology2t64
 libatspi2.0-0t64
 libattr1
@@ -503,6 +520,7 @@ libcap-ng0
 libcap2
 libcap2-bin
 libcbor0.10
+libcc1-0
 libcddb2
 libcdio-cdda2t64
 libcdio-paranoia2t64
@@ -600,6 +618,7 @@ libexpat1
 libext2fs2t64
 libfaad2
 libfakekey0
+libfakeroot
 libfastjson4
 libfcitx5-qt-data
 libfcitx5-qt1
@@ -640,6 +659,7 @@ libgail18t64
 libgav1-1
 libgbm1
 libgc1
+libgcc-13-dev
 libgcc-s1
 libgcrypt20
 libgd3
@@ -653,9 +673,7 @@ libgif7
 libgirepository-1.0-1
 libgit2-1.7
 libgl1
-libgl1-amber-dri
 libgl1-mesa-dri
-libglapi-mesa
 libgles2
 libglib2.0-0t64
 libglib2.0-bin
@@ -730,6 +748,7 @@ libhttp-message-perl
 libhttp-negotiate-perl
 libhttp-parser2.9
 libhunspell-1.7-0
+libhwasan0
 libhwy1t64
 libhyphen0
 libibus-1.0-5
@@ -761,6 +780,7 @@ libip4tc2
 libip6tc2
 libipc-system-simple-perl
 libisl23
+libitm1
 libiw30t64
 libixml11t64
 libjack-jackd2-0
@@ -991,8 +1011,8 @@ liblept5
 liblerc4
 liblilv-0-0
 liblirc-client0t64
-libllvm17t64
 libllvm18
+libllvm20
 liblmdb0
 liblocale-gettext-perl
 liblouis-data
@@ -1000,6 +1020,7 @@ liblouis20
 liblouisutdml-bin
 liblouisutdml-data
 liblouisutdml9t64
+liblsan0
 liblsofui9
 libltdl7
 liblua5.2-0
@@ -1334,6 +1355,7 @@ libssh2-1t64
 libssl-dev
 libssl3t64
 libstartup-notification0
+libstdc++-13-dev
 libstdc++6
 libstemmer0d
 libstoken1t64
@@ -1371,6 +1393,7 @@ libtraceevent1-plugin
 libtracefs1
 libtry-tiny-perl
 libts0t64
+libtsan2
 libtss2-esys-3.0.2-0t64
 libtss2-mu-4.0.1-0t64
 libtss2-sys1t64
@@ -1383,6 +1406,7 @@ libtss2-tcti-swtpm0t64
 libtss2-tctildr0t64
 libtwolame0
 libu2f-udev
+libubsan1
 libuchardet0
 libudev1
 libudfread0
@@ -1547,13 +1571,16 @@ lsb-base
 lsb-release
 lshw
 lsof
+lto-disabled-list
 lvm2
+make
 man-db
 manpages
 manpages-dev
 mawk
 media-player-info
 media-types
+mesa-libgallium
 mesa-utils
 mesa-utils-bin
 mesa-va-drivers
@@ -1866,6 +1893,7 @@ samba-libs
 sane-airscan
 sane-utils
 sbsigntool
+screen-resolution-extra
 sddm
 sddm-theme-breeze
 secureboot-db
