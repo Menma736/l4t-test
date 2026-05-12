@@ -839,9 +839,7 @@ libgfortran5
 libgirepository-1.0-1
 libgirepository-2.0-0
 libgl1
-libgl1-amber-dri
 libgl1-mesa-dri
-libglapi-mesa
 libgles2
 libglewmx1.13
 libglib-object-introspection-perl
@@ -933,7 +931,6 @@ libharfbuzz-icu0
 libharfbuzz0b
 libheif-plugin-aomdec
 libheif-plugin-aomenc
-libheif-plugin-libde265
 libheif1
 libhfstospell11
 libhogweed6t64
@@ -1103,8 +1100,8 @@ liblist-compare-perl
 liblist-someutils-perl
 liblist-someutils-xs-perl
 liblist-utilsby-perl
-libllvm17t64
 libllvm18
+libllvm20
 liblmdb0
 liblocale-gettext-perl
 liblouis-data
@@ -1649,7 +1646,6 @@ libwmf0.2-7-gtk
 libwmflite-0.2-7
 libwnck-3-0
 libwnck-3-common
-libwoff1
 libwpd-0.10-10
 libwpg-0.3-3
 libwps-0.4-4
@@ -1804,6 +1800,7 @@ mate-system-monitor-common
 mawk
 media-player-info
 media-types
+mesa-libgallium
 mesa-utils
 mesa-utils-bin
 mesa-va-drivers
@@ -1973,7 +1970,6 @@ python3-markupsafe
 python3-mdurl
 python3-minimal
 python3-netaddr
-python3-netifaces
 python3-netplan
 python3-oauthlib
 python3-olefile
