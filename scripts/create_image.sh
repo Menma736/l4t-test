@@ -23,6 +23,46 @@ status_green() { #announce the success of a major action
   echo -e "\e[92m$1\e[0m" 1>&2
 }
 
+# Detect distro and set appropriate commands
+detect_distro() {
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    echo "$ID"
+  else
+    echo "unknown"
+  fi
+}
+
+CURRENT_DISTRO=$(detect_distro)
+status "Detected distro: $CURRENT_DISTRO"
+
+# Set distro-specific commands
+case "$CURRENT_DISTRO" in
+  arch|artix)
+    ZEROFREE_CMD="zerofree"
+    E2LABEL_CMD="e2label"
+    MKFS_CMD="mkfs.ext4"
+    ;;
+  ubuntu|debian)
+    ZEROFREE_CMD="zerofree"
+    E2LABEL_CMD="e2label"
+    MKFS_CMD="mkfs.ext4"
+    ;;
+  *)
+    warning "Unknown distro, assuming standard Linux tools available"
+    ZEROFREE_CMD="zerofree"
+    E2LABEL_CMD="e2label"
+    MKFS_CMD="mkfs.ext4"
+    ;;
+esac
+
+# Check for required commands
+for cmd in "$MKFS_CMD" "$E2LABEL_CMD" "$ZEROFREE_CMD" "7z" "split" "dd" "mount" "umount"; do
+  if ! command -v "$cmd" &> /dev/null; then
+    error "Required command not found: $cmd"
+  fi
+done
+
 # move to current script directory regardless of where the script was run from
 cd `dirname $0` || exit 1
 cd ../output || error "Failed to move to output directory"
@@ -34,13 +74,13 @@ dd if=/dev/zero of=l4t.ext4.img bs=4194304 count=$(($bytes / 4194304 + 200))
 # dd if=/dev/zero of=l4t.ext4.img bs=4194304 count=1950
 status "Formatting to ext4"
 sync
-mkfs.ext4 -b 4096 l4t.ext4.img
+"$MKFS_CMD" -b 4096 l4t.ext4.img
 case "$1" in
 *-jammy)
-e2label l4t.ext4.img SWR-JAM
+"$E2LABEL_CMD" l4t.ext4.img SWR-JAM
 ;;
 *-noble)
-e2label l4t.ext4.img SWR-NOB
+"$E2LABEL_CMD" l4t.ext4.img SWR-NOB
 ;;
 esac
 mkdir -p mounted_ext4
@@ -54,7 +94,7 @@ cp -a rootfs/* mounted_ext4/ || error "Failed to copy rootfs to mount"
 sync
 umount mounted_ext4
 status "Cleaning up free space"
-zerofree l4t.ext4.img
+"$ZEROFREE_CMD" l4t.ext4.img
 
 status "Spliting image"
 split -b4290772992 --numeric-suffixes=0 "l4t.ext4.img" "l4t."
