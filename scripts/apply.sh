@@ -52,12 +52,9 @@ elif [[ "$1" == "gnome-noble" ]]; then
 elif [[ "$1" == "unity-noble" ]]; then
   export IMAGE_TYPE=unity-noble
   status "Ubuntu Unity Noble image creation selected."
-elif [[ "$1" == "kde-arch" ]]; then
-  export IMAGE_TYPE=kde-arch
-  status "KDE Arch Linux image creation selected."
-elif [[ "$1" == "gnome-arch" ]]; then
-  export IMAGE_TYPE=gnome-arch
-  status "GNOME Arch Linux image creation selected."
+elif [[ "$1" == "arch" ]]; then
+  export IMAGE_TYPE=arch
+  status "Arch Linux base image creation selected."
 elif [[ "$1" == "experiment" ]]; then
   export IMAGE_TYPE=experiment
   status "experiment image creation selected."
@@ -65,7 +62,7 @@ elif [[ -z ${1+x} ]]; then
   export IMAGE_TYPE=gnome-jammy
   status "No option specified, defaulting to GNOME image creation."  
 else
-  error "Invalid option specified. The supported inputs are: kde-jammy, kde-noble, gnome-jammy, gnome-noble, unity-noble, kde-arch, gnome-arch"
+  error "Invalid option specified. The supported inputs are: kde-jammy, kde-noble, gnome-jammy, gnome-noble, unity-noble, and arch"
 fi
 
 case "$IMAGE_TYPE" in
@@ -84,15 +81,10 @@ unity-noble)
 sudo mkdir rootfs
 sudo tar --xattrs-include='*' -xf ../files/rootfs/noble/ubuntu-unity-desktop-noble.tar.gz -C rootfs
 ;;
-kde-arch)
-# kde arch linux
+arch)
+# arch linux base (minimal, no DE)
 sudo mkdir rootfs
-sudo tar --xattrs-include='*' -xf ../files/rootfs/arch/archlinux-kde-base.tar.xz -C rootfs
-;;
-gnome-arch)
-# gnome arch linux
-sudo mkdir rootfs
-sudo tar --xattrs-include='*' -xf ../files/rootfs/arch/archlinux-gnome-base.tar.xz -C rootfs
+sudo tar --xattrs-include='*' -xf ../files/rootfs/arch/archlinux-base.tar.xz -C rootfs || error "Failed to extract Arch Linux base rootfs"
 ;;
 gnome-jammy)
 # gnome
@@ -132,10 +124,22 @@ cd ..
 status "Applying Switchroot customizations"
 
 # Check if this is Arch Linux based
-if [[ "$IMAGE_TYPE" == *"arch" ]]; then
+if [[ "$IMAGE_TYPE" == "arch" ]]; then
   status "Applying Arch Linux specific customizations"
-  # Arch Linux specific customizations would go here
-  # For now, minimal customizations as Arch is more minimalist
+  
+  # Setup pacman configuration
+  status "Configuring pacman"
+  sudo cp "$ROOT_DIR"/files/overwrite-files/pacman.conf "$OUTPUT_DIR"/rootfs/etc/pacman.conf || warning "pacman.conf not found, using default"
+  
+  # Initialize pacman keyring
+  status "Initializing pacman keyring (this may take a while)"
+  sudo "$SCRIPTS_DIR"/setup_arch_pacman.sh "$OUTPUT_DIR/rootfs" || warning "Pacman setup encountered issues, continuing..."
+  
+  # Clean up pacman cache to save space
+  status "Cleaning pacman cache"
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/var/cache/pacman/pkg/* 2>/dev/null || true
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/var/lib/pacman/sync/* 2>/dev/null || true
+  
 else
   #first boot script customizations (Ubuntu/Debian specific)
   sudo mkdir -p "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/dm-scripts/oem
