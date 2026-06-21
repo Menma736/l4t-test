@@ -172,13 +172,24 @@ if [ "${DEBUG}" == "true" ]; then
 	START_TIME=$(date +%s)
 fi
 
-
-if [ ! -f "${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME}" ]; then
-	echo "Debian script ${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME} not found"
-	exit 1
+# Check if this is Arch Linux
+if [ -f "${LDK_ROOTFS_DIR}/etc/os-release" ]; then
+	. "${LDK_ROOTFS_DIR}/etc/os-release"
+	if [ "$ID" = "arch" ]; then
+		IS_ARCH_LINUX="true"
+		status "Detected Arch Linux rootfs, skipping Debian/Ubuntu-specific customizations"
+	fi
 fi
-status "Running: ${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME} -r ${LDK_ROOTFS_DIR} -i ${IMAGE_TYPE}"
-"${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME}" -r ${LDK_ROOTFS_DIR} -i ${IMAGE_TYPE}
+
+# Skip DEB operations for Arch Linux
+if [ "$IS_ARCH_LINUX" != "true" ]; then
+	if [ ! -f "${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME}" ]; then
+		echo "Debian script ${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME} not found"
+		exit 1
+	fi
+	status "Running: ${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME} -r ${LDK_ROOTFS_DIR} -i ${IMAGE_TYPE}"
+	"${ROOT_DIR}/scripts/${DEB_SCRIPT_NAME}" -r ${LDK_ROOTFS_DIR} -i ${IMAGE_TYPE}
+fi
 
 ARM_ABI_DIR=
 
@@ -207,20 +218,23 @@ fi
 popd > /dev/null
 
 # Enable Unity by default for better user experience [2332219]
-echo "Rename ubuntu.desktop --> ux-ubuntu.desktop"
-if [ -d "${LDK_ROOTFS_DIR}/usr/share/xsessions" ]; then
-	pushd "${LDK_ROOTFS_DIR}/usr/share/xsessions" > /dev/null 2>&1
-	if [ -f "ubuntu.desktop" ]; then
-		mv "ubuntu.desktop" "ux-ubuntu.desktop"
+# Skip for Arch Linux
+if [ "$IS_ARCH_LINUX" != "true" ]; then
+	echo "Rename ubuntu.desktop --> ux-ubuntu.desktop"
+	if [ -d "${LDK_ROOTFS_DIR}/usr/share/xsessions" ]; then
+		pushd "${LDK_ROOTFS_DIR}/usr/share/xsessions" > /dev/null 2>&1
+		if [ -f "ubuntu.desktop" ]; then
+			mv "ubuntu.desktop" "ux-ubuntu.desktop"
+		fi
+		popd > /dev/null
 	fi
-	popd > /dev/null
-fi
 
-if [ -e "${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf" ]; then
-	grep -q -F 'allow-guest=false' \
-		"${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf" \
-		|| echo 'allow-guest=false' \
-		>> "${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf"
+	if [ -e "${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf" ]; then
+		grep -q -F 'allow-guest=false' \
+			"${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf" \
+			|| echo 'allow-guest=false' \
+			>> "${LDK_ROOTFS_DIR}/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf"
+	fi
 fi
 
 # test if installation comes with systemd-gpt-auto-generator. If so, disable it
@@ -258,28 +272,30 @@ if [ -h "${LDK_ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants/ondemand.s
 fi
 
 # If default target does not exist and if rootfs contains gdm or sddm or lightdm, set default to nv-oem-config target
-if ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/gdm3/" ] ) || ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/sddm/" ] ) || ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/lightdm/" ] ); then
-	mkdir -p "${LDK_ROOTFS_DIR}/etc/systemd/system/nv-oem-config.target.wants"
-	pushd "${LDK_ROOTFS_DIR}/etc/systemd/system/nv-oem-config.target.wants" > /dev/null 2>&1
-	ln -sf /lib/systemd/system/nv-oem-config.service nv-oem-config.service
-	ln -sf "/etc/systemd/system/nvfb-early.service" "nvfb-early.service"
-	popd > /dev/null 2>&1
-	pushd "${LDK_ROOTFS_DIR}/etc/systemd/system" > /dev/null 2>&1
-	ln -sf /lib/systemd/system/nv-oem-config.target nv-oem-config.target
-	ln -sf nv-oem-config.target default.target
-	popd > /dev/null 2>&1
+# Skip for Arch Linux
+if [ "$IS_ARCH_LINUX" != "true" ]; then
+	if ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/gdm3/" ] ) || ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/sddm.conf.d/" ] ) || ( [ ! -e "${LDK_ROOTFS_DIR}/etc/systemd/system/default.target" ] && [ -d "${LDK_ROOTFS_DIR}/etc/lightdm/" ] ); then
+		mkdir -p "${LDK_ROOTFS_DIR}/etc/systemd/system/nv-oem-config.target.wants"
+		pushd "${LDK_ROOTFS_DIR}/etc/systemd/system/nv-oem-config.target.wants" > /dev/null 2>&1
+		ln -sf /lib/systemd/system/nv-oem-config.service nv-oem-config.service
+		ln -sf "/etc/systemd/system/nvfb-early.service" "nvfb-early.service"
+		popd > /dev/null 2>&1
+		pushd "${LDK_ROOTFS_DIR}/etc/systemd/system" > /dev/null 2>&1
+		ln -sf /lib/systemd/system/nv-oem-config.target nv-oem-config.target
+		ln -sf nv-oem-config.target default.target
+		popd > /dev/null 2>&1
 
-	extra_groups="EXTRA_GROUPS=\"audio gdm gpio i2c video weston-launch\""
-	sed -i "/\<EXTRA_GROUPS\>=/ s/^.*/${extra_groups}/" \
-		"${LDK_ROOTFS_DIR}/etc/adduser.conf"
-	sed -i "/\<ADD_EXTRA_GROUPS\>=/ s/^.*/ADD_EXTRA_GROUPS=1/" \
-		"${LDK_ROOTFS_DIR}/etc/adduser.conf"
+		extra_groups="EXTRA_GROUPS=\"audio gdm gpio i2c video weston-launch\""
+		sed -i "/\<EXTRA_GROUPS\>=/ s/^.*/${extra_groups}/" \
+			"${LDK_ROOTFS_DIR}/etc/adduser.conf"
+		sed -i "/\<ADD_EXTRA_GROUPS\>=/ s/^.*/ADD_EXTRA_GROUPS=1/" \
+			"${LDK_ROOTFS_DIR}/etc/adduser.conf"
+	fi
+
+	if [ -e "${LDK_ROOTFS_DIR}/etc/gdm3/custom.conf" ]; then
+		sed -i "/WaylandEnable=false/ s/^#//" "${LDK_ROOTFS_DIR}/etc/gdm3/custom.conf"
+	fi
 fi
-
-if [ -e "${LDK_ROOTFS_DIR}/etc/gdm3/custom.conf" ]; then
-	sed -i "/WaylandEnable=false/ s/^#//" "${LDK_ROOTFS_DIR}/etc/gdm3/custom.conf"
-fi
-
 
 if [ "${DEBUG}" == "true" ]; then
 	END_TIME=$(date +%s)
