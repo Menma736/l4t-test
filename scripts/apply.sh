@@ -52,6 +52,12 @@ elif [[ "$1" == "gnome-noble" ]]; then
 elif [[ "$1" == "unity-noble" ]]; then
   export IMAGE_TYPE=unity-noble
   status "Ubuntu Unity Noble image creation selected."
+elif [[ "$1" == "kde-arch" ]]; then
+  export IMAGE_TYPE=kde-arch
+  status "KDE Arch Linux image creation selected."
+elif [[ "$1" == "gnome-arch" ]]; then
+  export IMAGE_TYPE=gnome-arch
+  status "GNOME Arch Linux image creation selected."
 elif [[ "$1" == "experiment" ]]; then
   export IMAGE_TYPE=experiment
   status "experiment image creation selected."
@@ -59,7 +65,7 @@ elif [[ -z ${1+x} ]]; then
   export IMAGE_TYPE=gnome-jammy
   status "No option specified, defaulting to GNOME image creation."  
 else
-  error "Invalid option specified. The supported inputs are: kde-jammy, kde-noble, gnome-jammy, gnome-noble, and unity-noble"
+  error "Invalid option specified. The supported inputs are: kde-jammy, kde-noble, gnome-jammy, gnome-noble, unity-noble, kde-arch, gnome-arch"
 fi
 
 case "$IMAGE_TYPE" in
@@ -77,6 +83,16 @@ unity-noble)
 # unity
 sudo mkdir rootfs
 sudo tar --xattrs-include='*' -xf ../files/rootfs/noble/ubuntu-unity-desktop-noble.tar.gz -C rootfs
+;;
+kde-arch)
+# kde arch linux
+sudo mkdir rootfs
+sudo tar --xattrs-include='*' -xf ../files/rootfs/arch/archlinux-kde-base.tar.xz -C rootfs
+;;
+gnome-arch)
+# gnome arch linux
+sudo mkdir rootfs
+sudo tar --xattrs-include='*' -xf ../files/rootfs/arch/archlinux-gnome-base.tar.xz -C rootfs
 ;;
 gnome-jammy)
 # gnome
@@ -115,54 +131,61 @@ cd ..
 
 status "Applying Switchroot customizations"
 
-#first boot script customizations
-sudo mkdir -p "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/dm-scripts/oem
-sudo cp "$ROOT_DIR"/files/overwrite-files/switch-randr "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/dm-scripts/oem/switch-randr
-sudo cp "$ROOT_DIR"/files/overwrite-files/ubiquity-dm "$OUTPUT_DIR"/rootfs/usr/bin/ubiquity-dm
-sudo rm "$OUTPUT_DIR"/rootfs/usr/share/xsessions/openbox.desktop
-sudo cp "$ROOT_DIR"/files/overwrite-files/nv-oem-config-post.sh "$OUTPUT_DIR"/rootfs/etc/systemd/nv-oem-config-post.sh
+# Check if this is Arch Linux based
+if [[ "$IMAGE_TYPE" == *"arch" ]]; then
+  status "Applying Arch Linux specific customizations"
+  # Arch Linux specific customizations would go here
+  # For now, minimal customizations as Arch is more minimalist
+else
+  #first boot script customizations (Ubuntu/Debian specific)
+  sudo mkdir -p "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/dm-scripts/oem
+  sudo cp "$ROOT_DIR"/files/overwrite-files/switch-randr "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/dm-scripts/oem/switch-randr
+  sudo cp "$ROOT_DIR"/files/overwrite-files/ubiquity-dm "$OUTPUT_DIR"/rootfs/usr/bin/ubiquity-dm
+  sudo rm "$OUTPUT_DIR"/rootfs/usr/share/xsessions/openbox.desktop
+  sudo cp "$ROOT_DIR"/files/overwrite-files/nv-oem-config-post.sh "$OUTPUT_DIR"/rootfs/etc/systemd/nv-oem-config-post.sh
 
-case "$IMAGE_TYPE" in
-unity-noble)
-# remove icon requirement that causes oem-config-remove-gtk to fail
-sudo sed -i 's/^    apt_dialog.set_icon(theme.load_icon("update-manager", 16, 0))/#    apt_dialog.set_icon(theme.load_icon("update-manager", 16, 0))/g'  "$OUTPUT_DIR"/rootfs/usr/sbin/oem-config-remove-gtk
-;;
-esac
+  case "$IMAGE_TYPE" in
+  unity-noble)
+  # remove icon requirement that causes oem-config-remove-gtk to fail
+  sudo sed -i 's/^    apt_dialog.set_icon(theme.load_icon("update-manager", 16, 0))/#    apt_dialog.set_icon(theme.load_icon("update-manager", 16, 0))/g'  "$OUTPUT_DIR"/rootfs/usr/sbin/oem-config-remove-gtk
+  ;;
+  esac
 
-#FIXME: these should be handled in packages
-sudo cp "$ROOT_DIR"/files/overwrite-files/custom.conf "$OUTPUT_DIR"/rootfs/etc/gdm3/custom.conf
-sudo ln -s /lib/systemd/system/iio-sensor-proxy.service "$OUTPUT_DIR"/rootfs/etc/systemd/system/multi-user.target.wants/iio-sensor-proxy.service
+  #FIXME: these should be handled in packages
+  sudo cp "$ROOT_DIR"/files/overwrite-files/custom.conf "$OUTPUT_DIR"/rootfs/etc/gdm3/custom.conf
+  sudo ln -s /lib/systemd/system/iio-sensor-proxy.service "$OUTPUT_DIR"/rootfs/etc/systemd/system/multi-user.target.wants/iio-sensor-proxy.service
 
-#FIXME: go through this list
-status "Cleaning up unneeded files in the image"
-sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_devzone.desktop
-sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_forums.desktop
-sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_jetson_zoo.desktop
-sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/amdgpu
-sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/radeon
-sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/radeon
-sudo rm "$OUTPUT_DIR"/rootfs/var/cache/apt/pkgcache.bin
-sudo rm "$OUTPUT_DIR"/rootfs/var/cache/apt/srcpkgcache.bin
-sudo rm "$OUTPUT_DIR"/rootfs/var/cache/debconf/templates.dat-old
-sudo rm "$OUTPUT_DIR"/rootfs/var/cache/debconf/config.dat-old
-sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/src/nvidia/graphics_demos/prebuilts
-sudo rm "$OUTPUT_DIR"/rootfs/usr/share/backgrounds/Manhattan_Sunset_by_Giacomo_Ferroni.jpg
-sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/share/example-content/Ubuntu_Free_Culture_Showcase
-sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so nouveau_dri.so
-sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_drv_video.so nouveau_drv_video.so
-sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_vieux_dri.so nouveau_vieux_dri.so
-sudo rm "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/*
-sudo mv nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so
-sudo mv nouveau_drv_video.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_drv_video.so
-sudo mv nouveau_vieux_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_vieux_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/kgsl_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/kms_swrast_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/meson_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/swrast_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/tegra_dri.so
-sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/virtio_gpu_dri.so
+  #FIXME: go through this list
+  status "Cleaning up unneeded files in the image"
+  sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_devzone.desktop
+  sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_forums.desktop
+  sudo rm "$OUTPUT_DIR"/rootfs/etc/skel/Desktop/nv_jetson_zoo.desktop
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/amdgpu
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/radeon
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/lib/firmware/radeon
+  sudo rm "$OUTPUT_DIR"/rootfs/var/cache/apt/pkgcache.bin
+  sudo rm "$OUTPUT_DIR"/rootfs/var/cache/apt/srcpkgcache.bin
+  sudo rm "$OUTPUT_DIR"/rootfs/var/cache/debconf/templates.dat-old
+  sudo rm "$OUTPUT_DIR"/rootfs/var/cache/debconf/config.dat-old
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/src/nvidia/graphics_demos/prebuilts
+  sudo rm "$OUTPUT_DIR"/rootfs/usr/share/backgrounds/Manhattan_Sunset_by_Giacomo_Ferroni.jpg
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/share/example-content/Ubuntu_Free_Culture_Showcase
+  sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so nouveau_dri.so
+  sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_drv_video.so nouveau_drv_video.so
+  sudo cp "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_vieux_dri.so nouveau_vieux_dri.so
+  sudo rm "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/*
+  sudo mv nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so
+  sudo mv nouveau_drv_video.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_drv_video.so
+  sudo mv nouveau_vieux_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/nouveau_vieux_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/kgsl_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/kms_swrast_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/meson_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/swrast_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/tegra_dri.so
+  sudo ln -s /usr/lib/aarch64-linux-gnu/dri/nouveau_dri.so "$OUTPUT_DIR"/rootfs/usr/lib/aarch64-linux-gnu/dri/virtio_gpu_dri.so
 
-sudo rm "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/plugins/nvresizefs.py
-sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/lib/nvidia/resizefs
+  sudo rm "$OUTPUT_DIR"/rootfs/usr/lib/ubiquity/plugins/nvresizefs.py
+  sudo rm -rf "$OUTPUT_DIR"/rootfs/usr/lib/nvidia/resizefs
+fi
 
 sudo "$SCRIPTS_DIR"/create_image.sh "$IMAGE_TYPE"
